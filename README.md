@@ -31,7 +31,7 @@ cryocheck_infer_mrc.py /your/mrc/dir/
 ```
 Pick out good mrc and tif so you can remove bad data
 ```
-cleanup.py /your/good_mrc/dir/ /your/tif/dir/
+cleanup.py /your/good_mrc/dir/ /your/total_tif/dir/
 ```
 ## Acknowledgement
 All cryo-EM micrographs data that used in training are collected in Dr. Jun He's lab in [Guangzhou Institutes of Biomedicine adn Health, Chinese Academt of Sciences](http://www.gibh.cas.cn/)
