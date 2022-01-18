@@ -29,10 +29,6 @@ Picking out micrographs in mrc format:
 ```
 cryocheck_infer_mrc.py /your/mrc/dir/
 ```
-Picking out micrographs in png format:
-```
-cryocheck_infer_png.py /your/png/dir/
-```
 Pick out good mrc and tif so you can remove bad data
 ```
 cleanup.py /your/good_mrc/dir/ /your/tif/dir/
