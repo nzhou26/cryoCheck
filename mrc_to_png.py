@@ -9,7 +9,7 @@ import multiprocessing
 from datetime import datetime
 import random
 
-process_number = 16
+process_number = 8
 
 binX = 341
 binY = 480
