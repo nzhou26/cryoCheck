@@ -1,10 +1,8 @@
 # To add a new cell, type '# %%'
 # To add a new markdown cell, type '# %% [markdown]'
 # %%
-from email.mime import base
 import random
 from importlib_metadata import pathlib
-import matplotlib.pyplot as plt
 import os
 import tensorflow as tf
 import keras.backend as K
@@ -16,16 +14,17 @@ import pandas as pd
 # %%
 IMG_SIZE = (320,320)
 IMG_SHAPE = IMG_SIZE + (3,)
+BATCH_SIZE = 32
 model_save_dir = '/storage_data/zhou_Ningkun/cryocheck_data_model/models'
 base_models = [
-    'DenseNet121',
-    'DenseNet169',
-    'DenseNet201',
-    'EfficientNetB0',
-    'EfficientNetB1',
-    'EfficientNetB2',
-    'EfficientNetB3',
-    'EfficientNetB5',
+    # 'DenseNet121',
+    # 'DenseNet169',
+    # 'DenseNet201',
+    # 'EfficientNetB0',
+    # 'EfficientNetB1',
+    # 'EfficientNetB2',
+    # 'EfficientNetB3',
+    # 'EfficientNetB5',
     'EfficientNetB6',
     'EfficientNetB7',
     'InceptionResNetV2',
@@ -34,8 +33,6 @@ base_models = [
     'MobileNetV2',
     'MobileNetV3Large',
     'MobileNetV3Small',
-    'NASNetLarge',
-    'NASNetMobile',
     'ResNet101',
     'ResNet101V2',
     'ResNet152',
@@ -46,18 +43,21 @@ base_models = [
     'VGG19',
     'Xception'
 ]
-def train_current(dataset, base_model_name, fine_tune_percent=0.2):
+def train_current(dataset, base_model_name, fine_tune_percent=0.2, gpu_list=[0,1]):
     train_set, val_set, test_set, num_used = dataset
-    class_method = getattr(tf.keras.applications, base_model_name)
-    base_model = class_method(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
-    model = create_model(base_model)
-    base_learning_rate = 0.001
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=base_learning_rate),
-                loss= tf.keras.losses.BinaryCrossentropy(from_logits=True),
-                metrics=[tf.keras.losses.BinaryCrossentropy(from_logits=True, 
-                                                            name='binary_crossentropy'),
-                                                            f1_metric,
-                                                            'accuracy'])
+    gpu_use = [f'/gpu:{gpu}' for gpu in gpu_list]
+    mirrored_strategy = tf.distribute.MirroredStrategy(devices=gpu_use)
+    with mirrored_strategy.scope():
+        class_method = getattr(tf.keras.applications, base_model_name)
+        base_model = class_method(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
+        model = create_model(base_model)
+        base_learning_rate = 0.001
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=base_learning_rate),
+                    loss= tf.keras.losses.BinaryCrossentropy(from_logits=True),
+                    metrics=[tf.keras.losses.BinaryCrossentropy(from_logits=True, 
+                                                                name='binary_crossentropy'),
+                                                                f1_metric,
+                                                                'accuracy'])
     es_callback = tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=5)
     initial_epochs = 30
     print(f'{base_model_name} train...')
@@ -81,12 +81,13 @@ def train_current(dataset, base_model_name, fine_tune_percent=0.2):
     
     # fine tuning
     fine_tune_at = round(len(base_model.layers)*(1- fine_tune_percent))
-    for layer in base_model.layers[:fine_tune_at]:
-        layer.trainable = False
-    model.compile(loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
-                  optimizer= tf.keras.optimizers.RMSprop(learning_rate=base_learning_rate/10),
-                  metrics=[tf.keras.losses.BinaryCrossentropy(from_logits=True, name='binary_crossentropy'), 
-                  f1_metric, 'accuracy'])
+    with mirrored_strategy.scope():
+        for layer in base_model.layers[:fine_tune_at]:
+            layer.trainable = False
+        model.compile(loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+                    optimizer= tf.keras.optimizers.RMSprop(learning_rate=base_learning_rate/10),
+                    metrics=[tf.keras.losses.BinaryCrossentropy(from_logits=True, name='binary_crossentropy'), 
+                    f1_metric, 'accuracy'])
     fine_tune_epochs = 20
     total_epochs = initial_epochs + fine_tune_epochs
     print('fine_tune...')
@@ -113,6 +114,7 @@ def test_acc_diff_model():
     return None
 def create_dataset(num_to_train):
     data_dir = '/ssd/train_data_cryocheck'
+    os.system('rm -rf /ssd/tmp_cryocheck')
     os.system('mkdir -p /ssd/tmp_cryocheck/good')
     os.system('mkdir -p /ssd/tmp_cryocheck/bad')
     good_paths = list(pathlib.Path(data_dir).glob('*/good/*.png'))
@@ -132,7 +134,7 @@ def create_dataset(num_to_train):
     for item in bad_paths:
         os.system(f'ln -snf {item.resolve()} /ssd/tmp_cryocheck/bad/')
     PATH = os.path.join('/ssd/tmp_cryocheck')
-    BATCH_SIZE = 32
+    
     
     train_dataset = image_dataset_from_directory(PATH,
                                                 validation_split=0.2,
@@ -189,83 +191,15 @@ def create_model (base_model):
 
 
 # %%
-# def train_model(train_dataset, validation_dataset, test_dataset, IMG_SHAPE, base_model, 
-
-#     #plt.savefig('pretrained_result/figures/' + standard_name + '_pre_ft.png')
-#     if augmented:
-#         model_file = 'train_result/saved_models/' +                      standard_name +                      str(round(accuracy_test,2)) + '_' + str(date.today()) + '_pre_ft.h5'
-#     else: 
-#         model_file = 'train_result/saved_models/' +                      standard_name +                       str(round(accuracy_test,2)) + '_' + str(date.today()) + '_pre_ft.h5'
-#     model.save(model_file, overwrite=True)
-#     base_model.trainable = True
-#     print('Number of layers in the base model: ', len(base_model.layers))
-#     fine_tune_at = round(len(base_model.layers)*(1- percent_layers_to_use))
-#     for layer in base_model.layers[:fine_tune_at]:
-#         layer.trainable = False
-#     model.compile(loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
-#                   optimizer= tf.keras.optimizers.RMSprop(lr=base_learning_rate/10),
-#                   metrics=[tf.keras.losses.BinaryCrossentropy(from_logits=True, name='binary_crossentropy'), 
-#                   f1_metric, 'accuracy'])
-#     model.summary()
-#     fine_tune_epochs = 20
-#     total_epochs = initial_epochs + fine_tune_epochs
-#     history_fine = model.fit(train_dataset,
-#                             epochs=total_epochs,
-#                             initial_epoch=history.epoch[-1],
-#                             validation_data=validation_dataset,
-#                             callbacks=[es_callback],
-#                             verbose=0)
-#     acc += history_fine.history['accuracy']
-#     val_acc += history_fine.history['val_accuracy']
-
-#     loss += history_fine.history['loss']
-#     val_loss += history_fine.history['val_loss']
-
-#     plt.figure(figsize=(8, 8))
-#     plt.subplot(2, 1, 1)
-#     plt.plot(acc, label='Training Accuracy')
-#     plt.plot(val_acc, label='Validation Accuracy')
-#     plt.ylim([0.8, 1])
-#     plt.plot([max(history.epoch) -1,max(history.epoch ) - 1],
-#             plt.ylim(), label='Start Fine Tuning')
-#     plt.legend(loc='lower right')
-#     plt.title('Training and Validation Accuracy')
-
-#     plt.subplot(2, 1, 2)
-#     plt.plot(loss, label='Training Loss')
-#     plt.plot(val_loss, label='Validation Loss')
-#     plt.ylim([0, 1.0])
-#     plt.plot([max(history.epoch) -1,max(history.epoch ) - 1],
-#             plt.ylim(), label='Start Fine Tuning')
-#     plt.legend(loc='upper right')
-#     plt.title('Training and Validation Loss')
-#     plt.xlabel('epoch')
-#     plt.savefig('train_result/figures/' + standard_name + '_ft.png')
-#     loss_test_ft, binary_cross_entropy_test_ft , f1_score_test_ft,accuracy_test_ft = model.evaluate(test_dataset)
-#     print('Test accuracy :', accuracy_test_ft)
-#     if augmented:
-#         model_file_tf = 'train_result/saved_models/' +                      standard_name +                      str(round(accuracy_test_ft,2)) + '_' + str(date.today()) + '_ft.h5'
-#     else: 
-#         model_file_tf = 'train_result/saved_models/' +                      standard_name +                      str(round(accuracy_test_ft,2)) + '_' + str(date.today()) + '_ft.h5'
-#     model.save(model_file_tf, overwrite=True)
-#     return {'f1_score_test': f1_score_test, 
-#             'accuracy_test': accuracy_test, 
-#             'number_of_trained_variables': len(model.trainable_variables), 
-#             'f1_score_test_ft': f1_score_test_ft, 
-#             'accuracy_test_ft': accuracy_test_ft}
-
-
-# %%
-
-
-
-# %%
 if __name__ == '__main__':
+    
     dataset = create_dataset(-1)
+
     for model in base_models:
-        train_current(dataset, base_model_name=model)
-    os.system('rm -rf /ssd/tmp_cryocheck')
-# %%
+        train_current(dataset, 
+        base_model_name=model, 
+        gpu_list=[1,2,3]
+        )
 
-
+    
 
