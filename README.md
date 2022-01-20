@@ -1,7 +1,7 @@
 # cryoCheck
 `cryocheck` is a deep learning-based cryo-EM micrograph quality assessment tool. After taken your micrographs, either in format of mrc or png, it will automatically pick out good micrographs by excluding carbon, ice-contaminated, and empty ones. 
 ## Architecture
-![cryocheck_arc](images/cryocheck_arc.png)
+![cryocheck_arch](images/cryocheck_arch.png)
 ## Installation
 1. Make sure you have [conda](https://docs.conda.io/en/latest/miniconda.html), [CUDA](https://developer.nvidia.com/cuda-toolkit)(version >= 11.0), and [cuDNN](https://developer.nvidia.com/cudnn) installed
 2. Clone this repo:
