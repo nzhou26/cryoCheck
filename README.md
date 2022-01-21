@@ -30,7 +30,7 @@ Activate conda environment first
 ```
 conda activate cryocheck
 ```
-Picking out micrographs in mrc format:
+Pick out micrographs in mrc format:
 ```
 cryocheck_infer_mrc.py /your/mrc/dir/
 ```
