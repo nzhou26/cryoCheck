@@ -3,6 +3,7 @@
 
 There are many kinds of contaiminated cryo-EM images that can not contribute to the final reconstruction.
 ![cryocheck_examples](images/cryocheck_examples.png)
+
 After taken your micrographs, either in format of mrc or png, `cryocheck` will automatically pick out good micrographs by excluding these types above. 
 ## Architecture
 ![cryocheck_arch](images/cryocheck_arch.png)
