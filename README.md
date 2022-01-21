@@ -25,6 +25,7 @@ conda activate cryocheck
 # install dependencies using pip
 pip install -r requirement.txt
 ```
+4. Download the latest [model file](https://drive.google.com/file/d/1tSZzZY1bayz9xnXIt1GyuKOW60RIOK8S/view?usp=sharing). Edit MODEL_PATH in [cryochekc_infer_png.py](cryocheck_infer_png.py)
 ## Usage
 Activate conda environment first
 ```

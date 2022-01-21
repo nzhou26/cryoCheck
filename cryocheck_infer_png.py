@@ -4,9 +4,10 @@ import os
 import tensorflow as tf
 import numpy as np
 import sys
-dirname = os.path.dirname(__file__)
-model_path = os.path.join(dirname, './models/efficientnetb0_not_augmented_0.9_2021-11-10_ft.h5')
-model = tf.keras.models.load_model(model_path, compile=False)
+
+# edit model path here to the model file you downloaded from google drive
+MODEL_PATH = '/storage_data/zhou_Ningkun/cryocheck_data_model/models/acc-88.32--f1-91.90--len-70941--ResNet101-ft--model.h5'
+model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
 # %%
 def pred(png_dir):
