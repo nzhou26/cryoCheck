@@ -58,10 +58,12 @@ def stats(data_dir, model_path):
     f1s = []
     accs = []
     for dir in pathlib.Path(data_dir).glob('*'):
+        data_names.append(dir.name)
         print(f'Testing: {dir.name}')
         f1, acc =infer_dir(dir, model)
         f1s.append(f1)
         accs.append(acc)
+    
     df = pd.DataFrame({
         'dataset name': data_names,
         'accuracy': accs,
@@ -95,13 +97,13 @@ def stats_hist(csv_file):
     print(np.std(acc_list))
 if __name__ == '__main__':
     #show_manual(9)
-    #rank_models('*len-1*.h5')
+    #rank_models('*len-7*.h5')
 
-    model_path = '/storage_data/zhou_Ningkun/cryocheck_data_model/models/acc-87.86--f1-91.96--len-70941--EfficientNetB5-ft--model.h5'
+    model_path = '/storage_data/zhou_Ningkun/cryocheck_data_model/models/acc-88.32--f1-91.90--len-70941--ResNet101-ft--model.h5'
     data_dir = '/ssd/train_data_cryocheck/'
-    # stats(data_dir, model_path)
+    #stats(data_dir, model_path)
     
-    csv_file = '/storage_data/zhou_Ningkun/cryocheck_data_model/stats/acc-87.86--f1-91.96--len-70941--EfficientNetB5-ft--model.h5.csv'
-    #stats_hist(csv_file)
+    csv_file = '/storage_data/zhou_Ningkun/cryocheck_data_model/stats/acc-88.32--f1-91.90--len-70941--ResNet101-ft--model.h5.csv'
+    stats_hist(csv_file)
 
 # %%
